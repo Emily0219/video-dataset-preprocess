@@ -117,8 +117,8 @@ class UCFDataset(Dataset):
         Args:
             root_dir (str): path to n_frames_jpg folders.
             info_list (str): path to annotation file.
+            split(str): whether create trainset. Default='train'.
             clip_len (int): Determines how many frames are there in each clip. Defaults to 16.
-            transform : Data augmentation. Defaults is None.
 
     """
 
