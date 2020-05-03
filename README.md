@@ -46,7 +46,7 @@ python utils/n_frames_ucf101_hmdb51.py jpg_video_directory
 ```
 
 After pre-processing, the image output dir's structure is as follows:
-  ```
+```
   UCF101_n_frames
   ├── ApplyEyeMakeup
   │   ├── v_ApplyEyeMakeup_g01_c01
@@ -66,7 +66,7 @@ After pre-processing, the image output dir's structure is as follows:
   │   │   ├── ...
   │   │   └── n_frames
   │   └── ...
-  ```
+```
 
 
 ### HMDB-51
@@ -129,16 +129,17 @@ After pre-processing, the image output dir's structure is as follows:
 
 The Train_Test split file contains following structure:
 ```
-hmdb51_TrainTestlist
-├── hmdb51_train.txt
-├── hmdb51_test.txt
-└── hmdb51_val.txt
+  hmdb51_TrainTestlist
+  ├── hmdb51_train.txt
+  ├── hmdb51_test.txt
+  └── hmdb51_val.txt
 ```
 
 ## load data with PyTorch
 Usage of dataloader
 ``` 
 from dataloaders.hmdb_dataset import HMDBDataset
+
 image_dir = '/home/../hmdb51_n_frames/'
 label_file = '/home/../hmdb51_TrainTestlist/hmdb51_train.txt'
 hmdb_trainset = HMDBDataset(image_dir, label_file, split='train', clip_len=16)
