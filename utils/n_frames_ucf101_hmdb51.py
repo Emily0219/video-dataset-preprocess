@@ -31,6 +31,6 @@ def class_process(dir_path, class_name):
 if __name__=="__main__":
     # dir_path = sys.argv[1]
     # dir_path = '/home/ran/mnt1/Dataset/hmdb51_n_frames'
-    dir_path = '/home/ran/mnt1/Dataset/UCF101_n_frames'
+    dir_path = './Dataset/UCF101_n_frames'
     for class_name in os.listdir(dir_path):
         class_process(dir_path, class_name)

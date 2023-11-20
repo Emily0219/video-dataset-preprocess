@@ -47,8 +47,8 @@ if __name__=="__main__":
     # dir_path = '/home/ran/mnt1/Dataset/hmdb51_org/'
     # dst_dir_path = '/home/ran/mnt1/Dataset/hmdb51_n_frames'
 
-    dir_path = '/home/ran/mnt1/Dataset/UCF-101/'
-    dst_dir_path = '/home/ran/mnt1/Dataset/UCF101_n_frames'
+    dir_path = 'Dataset/UCF-101/'
+    dst_dir_path = 'Dataset/UCF101_n_frames'
 
     for class_name in os.listdir(dir_path):
         class_process(dir_path, dst_dir_path, class_name)

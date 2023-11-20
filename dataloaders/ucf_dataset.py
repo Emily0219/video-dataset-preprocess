@@ -1,3 +1,5 @@
+
+
 import os
 import pandas as pd
 import numpy as np
@@ -127,7 +129,7 @@ class UCFDataset(Dataset):
         self.clip_len = clip_len
         self.landmarks_frame = pd.read_csv(info_list, delimiter=' ', header=None)
         self.label_class_map = {}
-        with open('/home/syr/UCF101/ucfTrainTestlist/classInd.txt') as f:
+        with open('./Dataset/ucfTrainTestlist/classInd.txt') as f:
             for line in f:
                 line=line.strip('\n').split(' ')
                 self.label_class_map[line[1]] = line[0]
@@ -175,7 +177,7 @@ class UCFDataset(Dataset):
         data = pd.read_csv(os.path.join(video_jpgs_path, 'n_frames'), delimiter=' ', header=None)
         frame_count = data[0][0]
         video_x = np.empty((self.clip_len, self.resize_height, self.resize_width, 3), np.dtype('float32'))
-        image_start = random.randint(1, frame_count - self.clip_len)
+        image_start = random.randint(1, abs(frame_count - self.clip_len))
         for i in range(self.clip_len):
             s = "%05d" % (i + image_start)
             image_name = 'image_' + s + '.jpg'
@@ -191,8 +193,8 @@ class UCFDataset(Dataset):
 
 if __name__ == '__main__':
     # usage
-    root_list = '/home/ran/mnt1/Dataset/UCF101_n_frames/'
-    info_list = '/home/ran/mnt1/Dataset/ucfTrainTestlist/testlist01.txt'
+    root_list = './Dataset/UCF101_n_frames/'
+    info_list = './Dataset/ucfTrainTestlist/testlist01.txt'
 
     # trainUCF101 = UCFDataset(root_list, info_list,'test'
     #                           )
@@ -203,8 +205,8 @@ if __name__ == '__main__':
     #                               ToTensor()]))
 
     # dataloader = DataLoader(trainUCF101, batch_size=8, shuffle=True, num_workers=0)
-    test_dataloader = DataLoader(UCFDataset(root_dir='/home/syr/UCF101/UCF101_n_frames',
-                                              info_list='/home/syr/UCF101/ucfTrainTestlist/testlist01.txt',
+    test_dataloader = DataLoader(UCFDataset(root_dir='./Dataset/UCF101_n_frames',
+                                              info_list='./Dataset/ucfTrainTestlist/testlist01.txt',
                                               split='test',
                                               clip_len=16),
                                  batch_size=8, shuffle=True,num_workers=0)
