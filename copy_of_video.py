@@ -60,12 +60,13 @@ Begin by installing and importing some necessary libraries, including:
 [remotezip](https://github.com/gtsystem/python-remotezip) to inspect the contents of a ZIP file, [tqdm](https://github.com/tqdm/tqdm) to use a progress bar, [OpenCV](https://opencv.org/) to process video files, and [`tensorflow_docs`](https://github.com/tensorflow/docs/tree/master/tools/tensorflow_docs) for embedding data in a Jupyter notebook.
 """
 
-# The way this tutorial uses the `TimeDistributed` layer requires TF>=2.10
-!pip install -U "tensorflow>=2.10.0"
+# # The way this tutorial uses the `TimeDistributed` layer requires TF>=2.10
+# !pip install -U "tensorflow>=2.10.0"
 
-!pip install remotezip tqdm opencv-python
-!pip install -q git+https://github.com/tensorflow/docs
+# !pip install remotezip tqdm opencv-python
+# !pip install -q git+https://github.com/tensorflow/docs
 
+#%%
 import tqdm
 import random
 import pathlib
@@ -85,6 +86,7 @@ from IPython import display
 from urllib import request
 from tensorflow_docs.vis import embed
 
+#%%
 """## Download a subset of the UCF101 dataset
 
 The [UCF101 dataset](https://www.tensorflow.org/datasets/catalog/ucf101) contains 101 categories of different actions in video, primarily used in action recognition. You will use a subset of these categories in this demo.
