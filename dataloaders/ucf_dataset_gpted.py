@@ -110,6 +110,9 @@ class ToTensor(object):
         return img.float().div(255)
 
 from sklearn.utils.class_weight import compute_class_weight
+import cv2
+import numpy as np
+from torch.utils.data import DataLoader
 
 class UCFDataset(Dataset):
     # ... (existing code)
@@ -194,6 +197,48 @@ class UCFDataset(Dataset):
     
     
     #gpt
+    # def remove_duplicate_frames(self):
+        # Implement a function to remove duplicate frames based on content similarity
+        # ...
+
+    def remove_duplicate_frames(self, video_path):
+        # Load video frames
+        cap = cv2.VideoCapture(video_path)
+        frames = []
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frames.append(frame)
+        cap.release()
+
+        # Calculate frame similarities
+        similarities = []
+        for i in range(len(frames)):
+            frame1 = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
+            for j in range(i + 1, len(frames)):
+                frame2 = cv2.cvtColor(frames[j], cv2.COLOR_BGR2GRAY)
+                similarity = cv2.matchTemplate(frame1, frame2, cv2.TM_CCOEFF_NORMED)
+                similarities.append(similarity)
+
+        # Find duplicate frames
+        duplicate_indices = []
+        threshold = 0.9  # Adjust the threshold as needed
+        for i in range(len(similarities)):
+            if similarities[i] >= threshold:
+                duplicate_indices.append(i)
+
+        # Remove duplicate frames
+        deduplicated_frames = [frames[i] for i in range(len(frames)) if i not in duplicate_indices]
+
+        return deduplicated_frames
+        
+
+    def data_loading_optimization(self):
+        # Implement prefetching and parallel processing in the DataLoader
+        dataloader = DataLoader(self, batch_size=self.batch_size, shuffle=self.shuffle, num_workers=self.num_workers, pin_memory=self.pin_memory)
+        return dataloader
+    
     def handle_imbalanced_data(self):
         # Check class distribution and implement class weighting if needed
         class_counts = np.zeros(len(self.label_class_map))
