@@ -173,22 +173,36 @@ class UCFDataset(Dataset):
         slash_rows = video_path.split('.')
         dir_name = slash_rows[0]
         video_jpgs_path = os.path.join(self.root_dir, dir_name)
-        # get the random continuous 16 frame
+
+        # Read the number of frames from the n_frames file
         data = pd.read_csv(os.path.join(video_jpgs_path, 'n_frames'), delimiter=' ', header=None)
         frame_count = data[0][0]
+
+        # Initialize an array to store all frames
         video_x = np.empty((self.clip_len, self.resize_height, self.resize_width, 3), np.dtype('float32'))
-        image_start = random.randint(1, abs(frame_count - self.clip_len))
+
         for i in range(self.clip_len):
-            s = "%05d" % (i + image_start)
+            # Compute the frame number based on the clip length
+            frame_number = (i * frame_count) // self.clip_len + 1
+
+            # Generate the image filename based on the frame number
+            s = "%05d" % frame_number
             image_name = 'image_' + s + '.jpg'
             image_path = os.path.join(video_jpgs_path, image_name)
-            tmp_image = cv2.imread(image_path)
-            tmp_image = cv2.resize(tmp_image, (self.resize_width, self.resize_height))
-            tmp_image = np.array(tmp_image).astype(np.float64)
-            tmp_image = tmp_image[:, :, ::-1]    # BGR -> RGB
-            video_x[i, :, :, :] = tmp_image
+
+            if os.path.exists(image_path):
+                # Read and resize the image
+                tmp_image = cv2.imread(image_path)
+                tmp_image = cv2.resize(tmp_image, (self.resize_width, self.resize_height))
+                tmp_image = np.array(tmp_image).astype(np.float64)
+                tmp_image = tmp_image[:, :, ::-1]  # BGR -> RGB
+
+                # Store the frame in the array
+                video_x[i, :, :, :] = tmp_image
 
         return video_x
+
+
 
 
 if __name__ == '__main__':
