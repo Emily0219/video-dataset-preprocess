@@ -34,7 +34,7 @@ def class_process(dir_path, dst_dir_path, class_name):
         except:
             print(dst_directory_path)
             continue
-        cmd = 'ffmpeg -i \"{}\" -vf scale=-1:240 \"{}/image_%05d.jpg\"'.format(video_file_path, dst_directory_path)
+        cmd = 'ffmpeg -i \"{}\" -vf "fps=1,scale=-1:240" \"{}/image_%05d.jpg\"'.format(video_file_path, dst_directory_path)
         #视频的读取与逐帧图像保存
         print(cmd)
         subprocess.call(cmd, shell=True)
