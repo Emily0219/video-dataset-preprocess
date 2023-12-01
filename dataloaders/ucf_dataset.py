@@ -201,6 +201,8 @@ class UCFDataset(Dataset):
                 video_x[i, :, :, :] = tmp_image
 
         return video_x
+    
+    
 
 
 
@@ -224,6 +226,8 @@ if __name__ == '__main__':
                                               split='test',
                                               clip_len=16),
                                  batch_size=8, shuffle=True,num_workers=0)
+    
+    torch.save(test_dataloader, 'processed_dataset.pth')
 
     for i_batch, (images, targets) in enumerate(test_dataloader):
         print(i_batch, images.size(), targets.size())
