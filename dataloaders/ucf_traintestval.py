@@ -27,12 +27,22 @@ with open(os.path.join(output_dir, 'class.txt'), 'w') as f:
     for i, folder in enumerate(all_action_folders, 1):
         f.write(f'{i} {folder}\n')
 
+<<<<<<< Updated upstream
 # Create a list of numbered action folders
 numbered_action_folders = [f"{i+1} {folder}" for i, folder in enumerate(action_folders)]
 
 # # Save the numbered action folders to a single text file
 # all_action_folders_path = os.path.join(output_dir, 'all_action_folders.txt')
 # np.savetxt(all_action_folders_path, numbered_action_folders, fmt='%s')
+=======
+
+# Create a list of numbered action folders
+numbered_action_folders = [f"{i+1} {folder}" for i, folder in enumerate(action_folders)]
+
+# Save the numbered action folders to a single text file
+all_action_folders_path = os.path.join(output_dir, 'all_action_folders.txt')
+np.savetxt(all_action_folders_path, numbered_action_folders, fmt='%s')
+>>>>>>> Stashed changes
 
 # Create a list of video file names with their respective folders
 video_files_with_folders = [f"{folder}/{os.path.basename(file)}" for folder, file in zip(action_folders, video_files)]
