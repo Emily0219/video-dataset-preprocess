@@ -3,7 +3,6 @@ import os
 import sys
 import subprocess
 
-# 统计每个视频截取的图像帧数
 def class_process(dir_path, class_name):
     class_path = os.path.join(dir_path, class_name)
     if not os.path.isdir(class_path):

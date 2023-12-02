@@ -12,6 +12,10 @@ import torch
 # Load the YOLOv8 model
 net = cv2.dnn.readNet("yolov8.weights", "yolov8.cfg")
 
+# Define the output layer names
+ln = net.getLayerNames()
+ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+
 
 class ClipSubstractMean(object):
     def __init__(self, b=104, g=117, r=123):
@@ -54,6 +58,61 @@ class RandomCrop(object):
         return new_buffer
 
 
+    def process_frame(self, frame):
+        # Construct a blob from the image and forward pass it through the network
+        blob = cv2.dnn.blobFromImage(frame, 1 / 255.0, (416, 416), swapRB=True, crop=False)
+        net.setInput(blob)
+        layer_outputs = net.forward(ln)
+
+        # Initialize the bounding boxes, confidences, and class IDs
+        boxes = []
+        confidences = []
+        class_ids = []
+
+        # Loop over each of the layer outputs
+        for output in layer_outputs:
+            # Loop over each of the detections
+            for detection in output:
+                # Extract the class ID and confidence of the current detection
+                scores = detection[5:]
+                class_id = np.argmax(scores)
+                confidence = scores[class_id]
+
+                # Filter out weak detections
+                if confidence > 0.5:
+                    # Extract the bounding box for the object
+                    box = detection[0:4] * np.array([frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
+                    (centerX, centerY, width, height) = box.astype("int")
+
+                    # Use the center (x, y)-coordinates to derive the top and
+                    # and left corner of the bounding box
+                    x = int(centerX - (width / 2))
+                    y = int(centerY - (height / 2))
+
+                    # Update the list of bounding boxes, confidences, and class IDs
+                    boxes.append([x, y, int(width), int(height)])
+                    confidences.append(float(confidence))
+                    class_ids.append(class_id)
+
+        # Apply non-maxima suppression to suppress weak, overlapping detections
+        idxs = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.3)
+
+        # Ensure at least one detection exists
+        if len(idxs) > 0:
+            # Loop over the indexes we are keeping
+            for i in idxs.flatten():
+                # Extract the bounding box coordinates
+                (x, y) = (boxes[i][0], boxes[i][1])
+                (w, h) = (boxes[i][2], boxes[i][3])
+
+                # Draw the bounding box rectangle and label on the image
+                color = [int(c) for c in COLORS[class_ids[i]]]
+                cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+                text = "{}: {:.4f}".format(LABELS[class_ids[i]], confidences[i])
+                cv2.putText(frame, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+        return frame
+
 class CenterCrop(object):
     """Crop the image in a sample at the center.
 
@@ -70,54 +129,20 @@ class CenterCrop(object):
             assert len(output_size) == 2
             self.output_size = output_size
 
-    # def __call__(self, buffer):
-    #     h, w = buffer.shape[1], buffer.shape[2]
-    #     new_h, new_w = self.output_size
+    def __call__(self, buffer):
+        h, w = buffer.shape[1], buffer.shape[2]
+        new_h, new_w = self.output_size
 
-    #     top = int(round(h - new_h) / 2.)
-    #     left = int(round(w - new_w) / 2.)
+        top = int(round(h - new_h) / 2.)
+        left = int(round(w - new_w) / 2.)
 
-    #     new_buffer = np.zeros((buffer.shape[0], new_h, new_w, 3))
-    #     for i in range(buffer.shape[0]):
-    #         image = buffer[i, :, :, :]
-    #         image = image[top: top + new_h, left: left + new_w]
-    #         new_buffer[i, :, :, :] = image
+        new_buffer = np.zeros((buffer.shape[0], new_h, new_w, 3))
+        for i in range(buffer.shape[0]):
+            image = buffer[i, :, :, :]
+            image = image[top: top + new_h, left: left + new_w]
+            new_buffer[i, :, :, :] = image
 
-    #     return new_buffer
-
-def __call__(self, buffer):
-    h, w = buffer.shape[1], buffer.shape[2]
-    new_h, new_w = self.output_size
-
-    top = int(round(h - new_h) / 2.)
-    left = int(round(w - new_w) / 2.)
-
-    new_buffer = np.zeros((buffer.shape[0], new_h, new_w, 3))
-    for i in range(buffer.shape[0]):
-        image = buffer[i, :, :, :]
-        image = image[top: top + new_h, left: left + new_w]
-        new_buffer[i, :, :, :] = image
-
-    # Insert the object detection and bounding box creation code here
-    new_buffer = self.process_buffer_with_yolo(new_buffer, top, left, new_h, new_w)
-
-    return new_buffer
-
-def process_buffer_with_yolo(self, buffer, top, left, new_h, new_w):
-    new_buffer = np.zeros((buffer.shape[0], new_h, new_w, 3))
-    for i in range(buffer.shape[0]):
-        image = buffer[i, :, :, :]
-        image = image[top: top + new_h, left: left + new_w]
-        results = self.model.predict(image)
-        for box in results.boxes:
-            cords = box.xyxy[0].tolist()
-            class_id = box.cls[0].item()
-            start = (int(cords[0]), int(cords[1]))  # x0, y0
-            end = (int(cords[2]), int(cords[3]))  # x1, y1
-            cv2.rectangle(image, start, end, (0, 200, 0), thickness=2)
-            cv2.putText(image, results.names[class_id], (start[0] + 15, start[1] + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (10, 0, 10), 2)
-        new_buffer[i, :, :, :] = image
-    return new_buffer
+        return new_buffer
 
 
 class RandomHorizontalFlip(object):
@@ -210,22 +235,38 @@ class UCFDataset(Dataset):
         slash_rows = video_path.split('.')
         dir_name = slash_rows[0]
         video_jpgs_path = os.path.join(self.root_dir, dir_name)
-        # get the random continuous 16 frame
+
+        # Read the number of frames from the n_frames file
         data = pd.read_csv(os.path.join(video_jpgs_path, 'n_frames'), delimiter=' ', header=None)
         frame_count = data[0][0]
+
+        # Initialize an array to store all frames
         video_x = np.empty((self.clip_len, self.resize_height, self.resize_width, 3), np.dtype('float32'))
-        image_start = random.randint(1, abs(frame_count - self.clip_len))
+
         for i in range(self.clip_len):
-            s = "%05d" % (i + image_start)
+            # Compute the frame number based on the clip length
+            frame_number = (i * frame_count) // self.clip_len + 1
+
+            # Generate the image filename based on the frame number
+            s = "%05d" % frame_number
             image_name = 'image_' + s + '.jpg'
             image_path = os.path.join(video_jpgs_path, image_name)
-            tmp_image = cv2.imread(image_path)
-            tmp_image = cv2.resize(tmp_image, (self.resize_width, self.resize_height))
-            tmp_image = np.array(tmp_image).astype(np.float64)
-            tmp_image = tmp_image[:, :, ::-1]    # BGR -> RGB
-            video_x[i, :, :, :] = tmp_image
+
+            if os.path.exists(image_path):
+                # Read and resize the image
+                tmp_image = cv2.imread(image_path)
+                tmp_image = cv2.resize(tmp_image, (self.resize_width, self.resize_height))
+                tmp_image = np.array(tmp_image).astype(np.float64)
+                tmp_image = tmp_image[:, :, ::-1]  # BGR -> RGB
+
+                # Store the frame in the array
+                video_x[i, :, :, :] = tmp_image
 
         return video_x
+    
+    
+
+
 
 
 if __name__ == '__main__':
@@ -247,8 +288,8 @@ if __name__ == '__main__':
                                               split='test',
                                               clip_len=16),
                                  batch_size=8, shuffle=True,num_workers=0)
+    
+    torch.save(test_dataloader, 'processed_dataset.pth')
 
     for i_batch, (images, targets) in enumerate(test_dataloader):
         print(i_batch, images.size(), targets.size())
-
-        
