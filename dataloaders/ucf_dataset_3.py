@@ -9,13 +9,6 @@ import cv2
 from torch.utils.data import Dataset, DataLoader
 import torch
 
-# Load the YOLOv8 model
-net = cv2.dnn.readNet("yolov8.weights", "yolov8.cfg")
-
-# Define the output layer names
-ln = net.getLayerNames()
-ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
-
 
 class ClipSubstractMean(object):
     def __init__(self, b=104, g=117, r=123):
@@ -57,61 +50,6 @@ class RandomCrop(object):
 
         return new_buffer
 
-
-    def process_frame(self, frame):
-        # Construct a blob from the image and forward pass it through the network
-        blob = cv2.dnn.blobFromImage(frame, 1 / 255.0, (416, 416), swapRB=True, crop=False)
-        net.setInput(blob)
-        layer_outputs = net.forward(ln)
-
-        # Initialize the bounding boxes, confidences, and class IDs
-        boxes = []
-        confidences = []
-        class_ids = []
-
-        # Loop over each of the layer outputs
-        for output in layer_outputs:
-            # Loop over each of the detections
-            for detection in output:
-                # Extract the class ID and confidence of the current detection
-                scores = detection[5:]
-                class_id = np.argmax(scores)
-                confidence = scores[class_id]
-
-                # Filter out weak detections
-                if confidence > 0.5:
-                    # Extract the bounding box for the object
-                    box = detection[0:4] * np.array([frame.shape[1], frame.shape[0], frame.shape[1], frame.shape[0]])
-                    (centerX, centerY, width, height) = box.astype("int")
-
-                    # Use the center (x, y)-coordinates to derive the top and
-                    # and left corner of the bounding box
-                    x = int(centerX - (width / 2))
-                    y = int(centerY - (height / 2))
-
-                    # Update the list of bounding boxes, confidences, and class IDs
-                    boxes.append([x, y, int(width), int(height)])
-                    confidences.append(float(confidence))
-                    class_ids.append(class_id)
-
-        # Apply non-maxima suppression to suppress weak, overlapping detections
-        idxs = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.3)
-
-        # Ensure at least one detection exists
-        if len(idxs) > 0:
-            # Loop over the indexes we are keeping
-            for i in idxs.flatten():
-                # Extract the bounding box coordinates
-                (x, y) = (boxes[i][0], boxes[i][1])
-                (w, h) = (boxes[i][2], boxes[i][3])
-
-                # Draw the bounding box rectangle and label on the image
-                color = [int(c) for c in COLORS[class_ids[i]]]
-                cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-                text = "{}: {:.4f}".format(LABELS[class_ids[i]], confidences[i])
-                cv2.putText(frame, text, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
-        return frame
 
 class CenterCrop(object):
     """Crop the image in a sample at the center.
@@ -265,14 +203,10 @@ class UCFDataset(Dataset):
         return video_x
     
     
-
-
-
-
 if __name__ == '__main__':
     # usage
     root_list = './Dataset/UCF101_n_frames/'
-    info_list = './Dataset/UCF-TrainTestVal/test_video_file.txt'
+    info_list = './Dataset/UCF-TrainTestVal/test_video_files.txt'
 
     # trainUCF101 = UCFDataset(root_list, info_list,'test'
     #                           )
@@ -283,8 +217,9 @@ if __name__ == '__main__':
     #                               ToTensor()]))
 
     # dataloader = DataLoader(trainUCF101, batch_size=8, shuffle=True, num_workers=0)
+
     test_dataloader = DataLoader(UCFDataset(root_dir='./Dataset/UCF101_n_frames',
-                                              info_list='./Dataset/UCF-TrainTestVal/test_video_file.txt',
+                                              info_list='./Dataset/UCF-TrainTestVal/test_video_files.txt',
                                               split='test',
                                               clip_len=16),
                                  batch_size=8, shuffle=True,num_workers=0)
@@ -293,3 +228,5 @@ if __name__ == '__main__':
 
     for i_batch, (images, targets) in enumerate(test_dataloader):
         print(i_batch, images.size(), targets.size())
+
+
