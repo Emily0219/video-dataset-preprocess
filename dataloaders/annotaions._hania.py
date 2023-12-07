@@ -181,17 +181,13 @@
 
 
 
-
-
 # import os
-# import torch
-# from torchvision.transforms import functional as F
 # from PIL import Image
-# from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
+# from yolov8m import YOLOv8
 
-# # Load a pre-trained model
-# model = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.COCO_V1)
-# model.eval()
+# # Load a pre-trained YOLOv8 model
+# model = YOLOv8(weights="yolov8.pt", device="cuda")
+
 # # Directory containing the original dataset
 # dataset_dir = './Dataset/UCF101_n_frames'
 
@@ -205,81 +201,23 @@
 #             # Load the image
 #             image_path = os.path.join(dirpath, filename)
 #             image = Image.open(image_path)
-#             image_tensor = F.to_tensor(image)
 
 #             # Get the model's predictions
-#             with torch.no_grad():
-#                 prediction = model([image_tensor])
+#             results = model.predict(image)
 
 #             # Convert the predictions to YOLO format
 #             yolo_annotations = []
-#             for box, label in zip(prediction[0]['boxes'], prediction[0]['labels']):
-#                 x, y, width, height = box.tolist()
-#                 class_id = label.item()
+#             for *box, confidence, class_id in results.xyxy[0]:
+#                 x1, y1, x2, y2 = box
+#                 x_center = (x1 + x2) / 2
+#                 y_center = (y1 + y2) / 2
+#                 width = x2 - x1
+#                 height = y2 - y1
 
-#                 # YOLO format: class x_center y_center width height
-#                 x_center = x + width / 2
-#                 y_center = y + height / 2
-
-#                 yolo_annotations.append(f"{class_id} {x_center} {y_center} {width} {height}")
+#                 yolo_annotations.append(f"{int(class_id)} {x_center} {y_center} {width} {height}")
 
 #             # Save the YOLO-formatted annotations
 #             output_annotation_file_path = os.path.join(output_dir, dirpath[len(dataset_dir):], filename[:-4] + '.txt')
 #             os.makedirs(os.path.dirname(output_annotation_file_path), exist_ok=True)
 #             with open(output_annotation_file_path, 'w') as f:
 #                 f.write('\n'.join(yolo_annotations))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import os
-from PIL import Image
-from yolov8 import YOLOv8
-
-# Load a pre-trained YOLOv8 model
-model = YOLOv8(weights="yolov8.pt", device="cuda")
-
-# Directory containing the original dataset
-dataset_dir = './Dataset/UCF101_n_frames'
-
-# Directory to store the YOLO-formatted labels
-output_dir = './Dataset/UCF-labels'
-
-# Loop over all subdirectories in the dataset
-for dirpath, dirnames, filenames in os.walk(dataset_dir):
-    for filename in filenames:
-        if filename.endswith('.jpg'):
-            # Load the image
-            image_path = os.path.join(dirpath, filename)
-            image = Image.open(image_path)
-
-            # Get the model's predictions
-            results = model.predict(image)
-
-            # Convert the predictions to YOLO format
-            yolo_annotations = []
-            for *box, confidence, class_id in results.xyxy[0]:
-                x1, y1, x2, y2 = box
-                x_center = (x1 + x2) / 2
-                y_center = (y1 + y2) / 2
-                width = x2 - x1
-                height = y2 - y1
-
-                yolo_annotations.append(f"{int(class_id)} {x_center} {y_center} {width} {height}")
-
-            # Save the YOLO-formatted annotations
-            output_annotation_file_path = os.path.join(output_dir, dirpath[len(dataset_dir):], filename[:-4] + '.txt')
-            os.makedirs(os.path.dirname(output_annotation_file_path), exist_ok=True)
-            with open(output_annotation_file_path, 'w') as f:
-                f.write('\n'.join(yolo_annotations))
